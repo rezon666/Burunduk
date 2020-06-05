@@ -17,10 +17,11 @@
 
     <ImageButton
         android:id="@+id/voiceBtn"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:layout_width="66dp"
+        android:layout_height="66dp"
+        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
+        android:layout_marginBottom="0dp"
         android:background="@null"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_mic" />
