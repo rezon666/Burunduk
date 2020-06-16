@@ -77,9 +77,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void find_weather(ArrayList<String> result) {
-        String city = result.get(0);
+
+        String city_word = result.get(0).substring(result.get(0).lastIndexOf(" ")+1);
         StringBuffer url = new StringBuffer("http://api.openweathermap.org/data/2.5/weather?q=&appid=5c1dc45847307301cbcb0cca69ef8ef2&lang=ru&units=metric");
-        url.insert(49, city);
+        url.insert(49, city_word);
         String new_url = url.toString();
 
 
@@ -100,13 +101,13 @@ public class MainActivity extends AppCompatActivity {
                     String speed = String.valueOf(wind.getInt("speed"));
 
                     weather.setText("Погода в городе "+city+":\n"+firstUpperCase(description) +"\n"
-                            +"Температура - "+temp+" °C\n"
-                            +"Скорость ветра - "+speed+" м/c");
+                            +"Температура: "+temp+" °C\n"
+                            +"Скорость ветра: "+speed+" м/c");
                     /*
                     Погода в городе сity:
                     Description
-                    Температура - temp°C
-                    Скорость ветра - speed м/c
+                    Температура: temp°C
+                    Скорость ветра: speed м/c
                     */
                     weather.setVisibility(View.VISIBLE);
                 }
