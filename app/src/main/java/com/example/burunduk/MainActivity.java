@@ -1,5 +1,6 @@
 package com.example.burunduk;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -31,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_SPEECH_INPUT = 1000;
     TextView text_help, text_voice;
-    TextView weather_city, weather_temp, weather_description;
+    TextView weather;
     ImageButton mVoiceBtn;
 
     @Override
@@ -41,9 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
         text_help = findViewById(R.id.text_help);
         text_voice = findViewById(R.id.text_voice);
-        weather_city = findViewById(R.id.weather_city);
-        weather_temp = findViewById(R.id.weather_temp);
-        weather_description = findViewById(R.id.weather_description);
+        weather = findViewById(R.id.weather);
         mVoiceBtn = findViewById(R.id.voiceBtn);
 
         mVoiceBtn.setOnClickListener(new View.OnClickListener() {
@@ -54,25 +53,62 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void find_weather() {
-        String url = "http://api.openweathermap.org/data/2.5/weather?q=Taganrog&appid=5c1dc45847307301cbcb0cca69ef8ef2&lang=ru&units=metric";
-        JsonObjectRequest jor = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+    private void speak() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите!");
+        try {
+            startActivityForResult(intent, REQUEST_CODE_SPEECH_INPUT);
+        } catch (Exception e) {
+            Toast.makeText(this, "" + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+        text_help.setVisibility(View.INVISIBLE);
+        text_voice.setVisibility(View.VISIBLE);
+        text_voice.setText(result.get(0));
+        find_weather(result);
+    }
+
+    private void find_weather(ArrayList<String> result) {
+        String city = result.get(0);
+        StringBuffer url = new StringBuffer("http://api.openweathermap.org/data/2.5/weather?q=&appid=5c1dc45847307301cbcb0cca69ef8ef2&lang=ru&units=metric");
+        url.insert(49, city);
+        String new_url = url.toString();
+
+
+        JsonObjectRequest jor = new JsonObjectRequest(Request.Method.GET, new_url, null, new Response.Listener<JSONObject>() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void onResponse(JSONObject response) {
                 try {
                     JSONObject main_object = response.getJSONObject("main");
-                    JSONArray array = response.getJSONArray("weather");
-                    JSONObject object = array.getJSONObject(0);
                     String city = response.getString("name");
                     String temp = String.valueOf(main_object.getInt("temp"));
-                    String description = object.getString("description");
 
-                    weather_city.setText(city);
-                    weather_city.setVisibility(View.VISIBLE);
-                    weather_temp.setText(temp);
-                    weather_temp.setVisibility(View.VISIBLE);
-                    weather_description.setText(description);
-                    weather_description.setVisibility(View.VISIBLE);
+                    JSONArray weather_array = response.getJSONArray("weather");
+                    JSONObject d_object = weather_array.getJSONObject(0);
+                    String description = d_object.getString("description");
+
+                    JSONObject wind = response.getJSONObject("wind");
+                    String speed = String.valueOf(wind.getInt("speed"));
+
+                    weather.setText("Погода в городе "+city+":\n"+firstUpperCase(description) +"\n"
+                            +"Температура - "+temp+" °C\n"
+                            +"Скорость ветра - "+speed+" м/c");
+                    /*
+                    Погода в городе сity:
+                    Description
+                    Температура - temp°C
+                    Скорость ветра - speed м/c
+                    */
+                    weather.setVisibility(View.VISIBLE);
                 }
                 catch (JSONException e) {
                     e.printStackTrace();
@@ -90,28 +126,9 @@ public class MainActivity extends AppCompatActivity {
         queue.add(jor);
     }
 
-    private void speak() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите!");
-        try {
-            startActivityForResult(intent, REQUEST_CODE_SPEECH_INPUT);
-        } catch (Exception e) {
-            Toast.makeText(this, "" + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-        text_help.setVisibility(View.INVISIBLE);
-        text_voice.setVisibility(View.VISIBLE);
-        text_voice.setText(result.get(0));
-        find_weather();
-
+    //замена первой буквы на заглавную для description
+    public String firstUpperCase(String word){
+        if(word == null || word.isEmpty()) return word;
+        return word.substring(0, 1).toUpperCase() + word.substring(1);
     }
 }
