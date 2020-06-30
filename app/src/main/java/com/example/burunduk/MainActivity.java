@@ -3,12 +3,13 @@ package com.example.burunduk;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,9 +31,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int REQUEST_CODE_SPEECH_INPUT = 1000;
-    TextView text_help, text_voice;
-    TextView weather;
+    TextView textView;
     ImageButton mVoiceBtn;
 
     @Override
@@ -40,9 +39,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        text_help = findViewById(R.id.text_help);
-        text_voice = findViewById(R.id.text_voice);
-        weather = findViewById(R.id.weather);
+        textView = findViewById(R.id.text);
         mVoiceBtn = findViewById(R.id.voiceBtn);
 
         mVoiceBtn.setOnClickListener(new View.OnClickListener() {
@@ -55,30 +52,47 @@ public class MainActivity extends AppCompatActivity {
 
     private void speak() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите!");
-        try {
-            startActivityForResult(intent, REQUEST_CODE_SPEECH_INPUT);
-        } catch (Exception e) {
-            Toast.makeText(this, "" + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+        startActivityForResult(intent, 10);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-        text_help.setVisibility(View.INVISIBLE);
-        text_voice.setVisibility(View.VISIBLE);
-        text_voice.setText(result.get(0));
-        find_weather(result);
+
+        if (data != null){
+            switch (requestCode){
+                case 10:
+                    ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    String text = result.get(0);
+                    textView.setVisibility(View.INVISIBLE);
+                    if(text.contains("погода в городе")){
+                        find_weather(text);
+                    }
+                    if(text.contains("Привет")){
+                        textView.setText("Добрый день");
+                        textView.setVisibility(View.VISIBLE);
+                    }
+                    if(text.contains("Открой карты")){
+                        Intent m = new Intent();
+                        PackageManager manager1 = getPackageManager();
+                        m = manager1.getLaunchIntentForPackage("com.google.android.apps.maps");
+                        m.addCategory(Intent.CATEGORY_LAUNCHER);
+                        startActivity(m);
+                    }
+                    if(text.contains("Открой браузер")){
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com"));
+                        startActivity(browserIntent);
+                    }
+            }
+        }
     }
 
-    private void find_weather(ArrayList<String> result) {
+    private void find_weather(String text) {
 
-        String city_word = result.get(0).substring(result.get(0).lastIndexOf(" ")+1);
+        String city_word = text.substring(text.lastIndexOf(" ")+1);
         StringBuffer url = new StringBuffer("http://api.openweathermap.org/data/2.5/weather?q=&appid=5c1dc45847307301cbcb0cca69ef8ef2&lang=ru&units=metric");
         url.insert(49, city_word);
         String new_url = url.toString();
@@ -100,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject wind = response.getJSONObject("wind");
                     String speed = String.valueOf(wind.getInt("speed"));
 
-                    weather.setText("Погода в городе "+city+":\n"+firstUpperCase(description) +"\n"
+                    textView.setText("Погода в городе "+city+":\n"+firstUpperCase(description) +"\n"
                             +"Температура: "+temp+" °C\n"
                             +"Скорость ветра: "+speed+" м/c");
                     /*
@@ -109,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
                     Температура: temp°C
                     Скорость ветра: speed м/c
                     */
-                    weather.setVisibility(View.VISIBLE);
+                    textView.setVisibility(View.VISIBLE);
                 }
                 catch (JSONException e) {
                     e.printStackTrace();
