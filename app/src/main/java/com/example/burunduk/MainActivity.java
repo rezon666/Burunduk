@@ -31,23 +31,30 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    TextView textView;
-    ImageButton mVoiceBtn;
+    TextView text_help, text_resilt;
+    ImageButton VoiceBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textView = findViewById(R.id.text);
-        mVoiceBtn = findViewById(R.id.voiceBtn);
+        text_help = findViewById(R.id.text_help);
+        text_resilt = findViewById(R.id.text_result);
+        VoiceBtn = findViewById(R.id.voiceBtn);
 
-        mVoiceBtn.setOnClickListener(new View.OnClickListener() {
+        VoiceBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                button_rotate();
                 speak();
             }
         });
+    }
+
+    private void button_rotate() {
+        VoiceBtn.setRotation(3600);
+        VoiceBtn.animate().rotation(0).setDuration(5000);
     }
 
     private void speak() {
@@ -67,13 +74,13 @@ public class MainActivity extends AppCompatActivity {
                 case 10:
                     ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     String text = result.get(0);
-                    textView.setVisibility(View.INVISIBLE);
+                    text_help.setVisibility(View.INVISIBLE);
                     if(text.contains("погода в городе")){
                         find_weather(text);
                     }
                     if(text.contains("Привет")){
-                        textView.setText("Добрый день");
-                        textView.setVisibility(View.VISIBLE);
+                        text_resilt.setText("Добрый день");
+                        text_resilt.setVisibility(View.VISIBLE);
                     }
                     if(text.contains("Открой карты")){
                         Intent m = new Intent();
@@ -114,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject wind = response.getJSONObject("wind");
                     String speed = String.valueOf(wind.getInt("speed"));
 
-                    textView.setText("Погода в городе "+city+":\n"+firstUpperCase(description) +"\n"
+                    text_resilt.setText("Погода в городе "+city+":\n"+firstUpperCase(description) +"\n"
                             +"Температура: "+temp+" °C\n"
                             +"Скорость ветра: "+speed+" м/c");
                     /*
@@ -123,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                     Температура: temp°C
                     Скорость ветра: speed м/c
                     */
-                    textView.setVisibility(View.VISIBLE);
+                    text_resilt.setVisibility(View.VISIBLE);
                 }
                 catch (JSONException e) {
                     e.printStackTrace();
